@@ -1,0 +1,82 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:12
+    container_name: seeder-postgres
+    ports:
+      - 9432:5432
+    volumes:
+      - seeder-postgres-data:/var/lib/postgresql/data/pgdata
+      - ./:/app/
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_DB=seeder
+      - PGDATESTYLE=MDY
+
+  postgres13:
+    image: postgres:13
+    container_name: seeder-postgres13
+    ports:
+      - 13432:5432
+    volumes:
+      - seeder-postgres13-data:/var/lib/postgresql/data/pgdata
+      - ./:/app/
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_DB=seeder
+      - PGDATESTYLE=MDY
+
+  mysql:
+    container_name: seeder-mysql
+    image: mysql:5.7
+    volumes:
+      - seeder-mysql-data:/var/lib/mysql
+      - ./:/app/
+    ports:
+      - 9306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: seeder
+      MYSQL_DATABASE: seeder
+      MYSQL_USER: seeder
+      MYSQL_PASSWORD: seeder
+
+  timescale:
+    image: timescale/timescaledb:2.1.0-pg12
+    container_name: seeder-timescale
+    ports:
+      - 10432:5432
+    volumes:
+      - seeder-timescale-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+
+volumes:
+  seeder-sync-data: {
+    name: 'seeder-sync-data'
+  }
+  seeder-postgres-data: {
+    name: 'seeder-postgres-data'
+  }
+  seeder-postgres13-data: {
+    name: seeder-postgres13-data
+  }
+  seeder-timescale-data: {
+    name: 'seeder-timescale-data'
+  }
+  seeder-mysql-data: {
+    name: 'seeder-mysql-data'
+  }
+  seeder-victoria-data: {
+    name: 'seeder-victoria-data'
+  }
+  seeder-grafana-lib: {
+    name: 'seeder-grafana-lib'
+  }
+  seeder-grafana-config: {
+    name: 'seeder-grafana-config'
+  }
+  seeder-grafana-log: {
+    name: 'seeder-grafana-log'
+  }

@@ -1,0 +1,188 @@
+# example shopping website
+connectionConfig:
+  client: 'postgres'
+  connection:
+    user: 'postgres'
+    host: 'localhost'
+    database: 'etl'
+    password: ''
+    port: 9432
+    pgschema: 'public'
+iterations: 10
+continuousIterations: 100
+seed: 219
+schema:
+  customer:
+    fields:
+      id:
+        type: sequence
+      first_name:
+        type: name.firstName
+      last_name:
+        type: name.lastName
+      email:
+        type: internet.email
+      password:
+        type: internet.password
+      username:
+        type: internet.userName
+      avatar:
+        type: internet.avatar
+      dob:
+        type: date.past
+      gender:
+        type: name.gender
+      active:
+        type: random.boolean
+      address:
+        type: reference
+        referenceType: hasMany
+        onDelete: cascade
+        entity: address
+        field: id
+        count:
+          min: 1
+          max: 5
+      created_on:
+        type: date.past
+    constraints:
+      primaryKey:
+        - id
+      unique:
+        - username
+        - email
+    count: 1000
+  address:
+    fields:
+      id:
+        type: sequence
+      street_address:
+        type: address.streetAddress
+      state:
+        type: address.state
+      country:
+        type: address.country
+      zip_code:
+        type: address.zipCode
+      is_primary:
+        type: random.boolean
+    constraints:
+      primaryKey:
+        - id
+  product:
+    fields:
+      id:
+        type: sequence
+      name:
+        type: commerce.productName
+      price:
+        type: commerce.price
+      description:
+        type: commerce.productDescription
+      category:
+        type: commerce.department
+      manufacturer:
+        type: reference
+        referenceType: belongsToOne
+        onDelete: cascade
+        entity: manufacturer
+        field: id
+      seller:
+        type: reference
+        referenceType: belongsToMany
+        onDelete: cascade
+        entity: seller
+        field: id
+        count:
+          min: 1
+          max: 6
+    constraints:
+      primaryKey:
+        - id
+    count: 500
+  manufacturer:
+    fields:
+      id:
+        type: sequence
+      name:
+        type:
+          - company.companyName
+          - space
+          - company.companySuffix
+      address:
+        type: reference
+        referenceType: hasOne
+        entity: address
+        field: id
+    constraints:
+      primaryKey:
+        - id
+      unique:
+        - name
+    count: 100
+  seller:
+    fields:
+      id:
+        type: sequence
+      name:
+        type:
+          - company.companyName
+          - space
+          - company.companySuffix
+      address:
+        type: reference
+        referenceType: hasOne
+        entity: address
+        field: id
+    constraints:
+      primaryKey:
+        - id
+      unique:
+        - name
+    count: 250
+  seller_product:
+    fields:
+      stock:
+        type: random.number
+    constraints:
+      primaryKey:
+        - seller_id
+        - product_id
+  order:
+    fields:
+      id:
+        type: sequence
+      product:
+        type: reference
+        referenceType: belongsToOne
+        onDelete: cascade
+        entity: product
+        field: id
+      seller:
+        type: reference
+        referenceType: belongsToOne
+        onDelete: cascade
+        entity: seller
+        field: id
+      delivery_address:
+        type: reference
+        referenceType: belongsToOne
+        onDelete: cascade
+        entity: address_customer
+        field: id
+      created_on:
+        type: date.past
+    constraints:
+      primaryKey:
+        - id
+    count: 750
+  address_customer:
+    fields:
+      id:
+        type: 'sequence'
+    constraints:
+      primaryKey:
+        - id
+      unique:
+        - - address_id
+          - customer_id
