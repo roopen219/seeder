@@ -1,5 +1,5 @@
 {
-  "name": "@roopen219/seeder",
+  "name": "@roopendra/seeder",
   "version": "0.0.1",
   "main": "dist/lib/Seeder.js",
   "bin": {
