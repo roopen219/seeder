@@ -5,7 +5,7 @@
   "bin": {
     "seeder": "dist/bin/seeder.js"
   },
-  "private": "false",
+  "private": false,
   "scripts": {
     "seed": "node dist/bin/seeder.js init seed.yml",
     "lint": "eslint --fix",
