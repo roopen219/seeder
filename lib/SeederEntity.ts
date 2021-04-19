@@ -182,7 +182,7 @@ class SeederEntity {
         return '';
       }
       const fakeData = invoke(faker, type) as string;
-      return this.isFieldUnique(name) ? nanoid.nanoid(4) + fakeData : fakeData;
+      return this.isFieldUnique(name) ? nanoid.nanoid(10) + fakeData : fakeData;
     });
     return data.length === 1 ? data[0] : join(data, '');
   }
