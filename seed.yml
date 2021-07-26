@@ -7,7 +7,7 @@ connectionConfig:
     database: 'etl'
     password: ''
     port: 9432
-    pgschema: 'public'
+    schema: 'public'
 iterations: 10
 continuousIterations: 100
 seed: 219
