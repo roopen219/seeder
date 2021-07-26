@@ -11,6 +11,7 @@ import {
   times,
   join,
   random,
+  reverse,
 } from 'lodash';
 import stringify from 'fast-safe-stringify';
 import { isReferenceEntityField } from './ReferenceEntityField';
@@ -35,9 +36,14 @@ class Seeder {
   private seederEntities: SeederEntityStore;
   private dbType: string;
   private ora: ora.Ora;
+  private connectionConfig: {
+    client: string;
+    connection: Record<string, unknown>;
+  };
 
   constructor(config: SeederConfig) {
     this.knex = knex(config.connectionConfig);
+    this.connectionConfig = config.connectionConfig;
     this.dbType = config.connectionConfig.client;
     this.schema = config.schema;
     this.iterations = config.iterations ?? 1;
@@ -56,6 +62,8 @@ class Seeder {
   }
 
   async start(): Promise<void> {
+    this.ora.text = 'Deleting tables...';
+    await this.deleteTables();
     this.ora.text = 'Creating tables...';
     await this.createTables();
     this.ora.succeed('Tables created');
@@ -148,6 +156,19 @@ class Seeder {
     );
   }
 
+  async deleteTables() {
+    await series(
+      map(reverse(this.dependencyQueue), (entities) => () => {
+        return parallel(
+          map(entities, ({ name }) => () => {
+            return this.seederEntities[name].deleteTable();
+          })
+        );
+      })
+    );
+    reverse(this.dependencyQueue);
+  }
+
   createTables() {
     return series(
       map(this.dependencyQueue, (entities) => () => {
@@ -179,7 +200,9 @@ class Seeder {
         entity,
         this.dbType,
         this.knex,
-        this.seederEntities
+        this.seederEntities,
+        (this.connectionConfig.connection.schema ||
+          this.connectionConfig.connection.database) as string
       );
     });
   }

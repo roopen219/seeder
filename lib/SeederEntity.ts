@@ -36,13 +36,15 @@ class SeederEntity {
   private records: Array<SeederRecord>;
   private dbType: string;
   private knex: Knex;
+  private dbSchema: string;
 
   constructor(
     name: string,
     entity: Entity,
     dbType: string,
     knex: Knex,
-    seederEntityStore: SeederEntityStore
+    seederEntityStore: SeederEntityStore,
+    dbSchema: string
   ) {
     this.store = seederEntityStore;
     this.entity = entity;
@@ -50,6 +52,7 @@ class SeederEntity {
     this.dbType = dbType;
     this.knex = knex;
     this.records = [];
+    this.dbSchema = dbSchema;
     this.initSequenceCounter();
   }
 
@@ -74,42 +77,51 @@ class SeederEntity {
     return mapFieldTypeToDbType(field.type, this.dbType);
   }
 
-  async createTable() {
+  async deleteTable() {
     if (this.dbType === 'postgres') {
-      await this.knex.raw(format('drop table if exists %I cascade', this.name));
+      await this.knex.raw(
+        format('drop table if exists %I.%I cascade', this.dbSchema, this.name)
+      );
     } else {
-      await this.knex.schema.dropTableIfExists(this.name);
+      await this.knex.schema
+        .withSchema(this.dbSchema)
+        .dropTableIfExists(this.name);
     }
-    await this.knex.schema.createTable(this.name, (table) => {
-      each(this.entity.fields, (field, name) => {
-        if (
-          isReferenceEntityField(field) &&
-          (field.referenceType === 'hasMany' ||
-            field.referenceType === 'belongsToMany')
-        ) {
-          return;
-        }
-        const column = table.specificType(name, this.getFieldDbType(name));
-        if (isReferenceEntityField(field)) {
+  }
+
+  async createTable() {
+    await this.knex.schema
+      .withSchema(this.dbSchema)
+      .createTable(this.name, (table) => {
+        each(this.entity.fields, (field, name) => {
           if (
-            field.referenceType === 'belongsToOne' ||
-            field.referenceType === 'hasOne'
+            isReferenceEntityField(field) &&
+            (field.referenceType === 'hasMany' ||
+              field.referenceType === 'belongsToMany')
           ) {
-            column.references(`${field.entity}.${field.field}`);
-            if (field.onDelete) {
-              column.onDelete(field.onDelete);
+            return;
+          }
+          const column = table.specificType(name, this.getFieldDbType(name));
+          if (isReferenceEntityField(field)) {
+            if (
+              field.referenceType === 'belongsToOne' ||
+              field.referenceType === 'hasOne'
+            ) {
+              column.references(`${field.entity}.${field.field}`).notNullable();
+              if (field.onDelete) {
+                column.onDelete(field.onDelete);
+              }
             }
           }
+        });
+        this.entity.constraints?.primaryKey &&
+          table.primary(this.entity.constraints?.primaryKey);
+        if (this.entity.constraints?.unique) {
+          each(this.entity.constraints.unique, (col) =>
+            table.unique(castArray(col))
+          );
         }
       });
-      this.entity.constraints?.primaryKey &&
-        table.primary(this.entity.constraints?.primaryKey);
-      if (this.entity.constraints?.unique) {
-        each(this.entity.constraints.unique, (col) =>
-          table.unique(castArray(col))
-        );
-      }
-    });
   }
 
   flushToTable() {
@@ -182,7 +194,7 @@ class SeederEntity {
         return '';
       }
       const fakeData = invoke(faker, type) as string;
-      return this.isFieldUnique(name) ? nanoid.nanoid(10) + fakeData : fakeData;
+      return this.isFieldUnique(name) ? nanoid.nanoid(6) + fakeData : fakeData;
     });
     return data.length === 1 ? data[0] : join(data, '');
   }

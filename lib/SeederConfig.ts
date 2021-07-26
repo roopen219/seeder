@@ -3,7 +3,10 @@ import Entity from './Entity';
 interface SeederConfig {
   connectionConfig: {
     client: string;
-    connection: Record<string, unknown>;
+    connection: {
+      database: string;
+      [prop: string]: unknown;
+    };
   };
   seed?: number;
   iterations?: number;
